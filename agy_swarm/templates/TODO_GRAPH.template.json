@@ -1,0 +1,23 @@
+{
+  "run": "<run name>",
+  "flavor": "standard",
+  "repo": "<abs repo path>",
+  "integration_branch": "<branch>",
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "<short title>",
+      "depends_on": [],
+      "wave": 1,
+      "scope": { "allowed": ["path/to/file.py"], "forbidden": ["path/to/other.py"] },
+      "role": "EXECUTOR",
+      "context": "<only what the worker needs>",
+      "acceptance": ["<checkable command that exits 0 on success>"],
+      "status": "pending",
+      "attempts": 0,
+      "branch": "wp/t1-name",
+      "worktree": "<abs worktree path>",
+      "commit": ""
+    }
+  ]
+}

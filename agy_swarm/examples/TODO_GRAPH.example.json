@@ -1,0 +1,28 @@
+{
+  "run": "add-greeting-cli",
+  "flavor": "standard",
+  "repo": "/work/demo",
+  "integration_branch": "feat/greeting",
+  "tasks": [
+    {"id":"T1","title":"Add greet() helper","depends_on":[],"wave":1,
+     "scope":{"allowed":["src/greet.py"],"forbidden":["src/cli.py","tests/"]},
+     "role":"EXECUTOR_LIGHT","context":"greet(name) returns 'Hello, <name>!'",
+     "acceptance":["python3 -c \"from src.greet import greet; assert greet('A')=='Hello, A!'\""],
+     "status":"pending","attempts":0,"branch":"wp/t1-greet","worktree":"/work/demo-wp1","commit":""},
+    {"id":"T2","title":"Add config loader","depends_on":[],"wave":1,
+     "scope":{"allowed":["src/config.py"],"forbidden":["src/greet.py","src/cli.py"]},
+     "role":"EXECUTOR","context":"load_config(path) -> dict from JSON",
+     "acceptance":["python3 -m pytest tests/test_config.py -q"],
+     "status":"pending","attempts":0,"branch":"wp/t2-config","worktree":"/work/demo-wp2","commit":""},
+    {"id":"T3","title":"Wire CLI to greet + config","depends_on":["T1","T2"],"wave":2,
+     "scope":{"allowed":["src/cli.py"],"forbidden":["src/greet.py","src/config.py"]},
+     "role":"EXECUTOR_HARD","context":"cli.py reads config, calls greet",
+     "acceptance":["python3 -m src.cli --name A | grep -q 'Hello, A!'"],
+     "status":"pending","attempts":0,"branch":"wp/t3-cli","worktree":"/work/demo-wp3","commit":""},
+    {"id":"T4","title":"CLI integration tests","depends_on":["T3"],"wave":3,
+     "scope":{"allowed":["tests/test_cli.py"],"forbidden":["src/"]},
+     "role":"EXECUTOR","context":"cover happy path and missing config",
+     "acceptance":["python3 -m pytest tests/test_cli.py -q"],
+     "status":"pending","attempts":0,"branch":"wp/t4-tests","worktree":"/work/demo-wp4","commit":""}
+  ]
+}

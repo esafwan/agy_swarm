@@ -41,6 +41,14 @@ cd <abs-worktree> && agy --new-project --model "$(agy_models.sh --deep get <ROLE
 
 Background processes for parallelism; `conversation_id` from the JSON output goes in SWARM_STATE; resume with `agy --conversation <id>`. After every call run `git status --short` and `git diff --stat` in the intended worktree (wrong-directory gotcha). Reviewers are read-only: say so, or pass `--mode plan`. Write long prompts to a file and capture each review's stdout to a log file.
 
+## Graph and loop (mechanical, same tooling as agy_swarm)
+
+State lives in `<run>/TODO_GRAPH.json` (set `"flavor": "deep"` so dispatch uses `--deep`). Only `agy_swarm/scripts/swarm_graph.sh` mutates it: `validate | ready | waves | next | set <id> <status> [sha] | prompt <id>`. Loop for steps 4-8 below: `validate` -> `ready` -> `next` (dispatch via `agy_dispatch.sh --deep --role`) -> check `git diff --stat` + scope -> run acceptance commands -> `set <id> review` -> CROSS_REVIEW -> `set <id> done <sha>` -> repeat until nothing is pending. Escalation is `attempts // 2` steps up the ladder `EXECUTOR_LIGHT -> EXECUTOR -> EXECUTOR_HARD -> STEERING -> CROSS_REVIEW -> STUCK_HANDOFF`.
+
+DO NOT: skip `validate`; dispatch tasks with unmet deps; let workers edit outside `scope.allowed`; trust a report without `git diff --stat`; hand-edit statuses; edit anything yourself as orchestrator; hardcode model strings.
+
+Worker prompts use the fixed sections Scope / Forbidden / Context / Acceptance / Self-check / Output format (`swarm_graph.sh prompt <id>`).
+
 ## Algorithm
 
 1. **Research first, in parallel (EXECUTOR, read-only).** Name specific questions per node; each returns a written findings file on disk (run dir), not just a chat summary. Bound the phase.

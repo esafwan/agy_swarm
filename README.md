@@ -44,6 +44,21 @@ These are defaults; see "Configuring models". Run `agy models` first; names drif
 
 `agy_swarm` never uses Argon.
 
+## The TODO graph
+
+Weaker instruction-followers need mechanics, not prose. The plan is a JSON file (`agy_swarm/templates/TODO_GRAPH.template.json`, worked example `agy_swarm/examples/TODO_GRAPH.example.json`) with per task: id, title, depends_on, wave, scope allowed/forbidden, role, acceptance commands, status, attempts, branch, worktree, commit. `agy_swarm/scripts/swarm_graph.sh` (bash + python3 stdlib) operates on it:
+
+```bash
+swarm_graph.sh validate G.json   # unknown deps, cycles, missing acceptance, same-wave scope overlap
+swarm_graph.sh ready G.json      # pending tasks whose deps are all done
+swarm_graph.sh waves G.json      # computed topological waves
+swarm_graph.sh next G.json       # dispatch command per ready task (role escalates with attempts)
+swarm_graph.sh set G.json T1 done <sha>
+swarm_graph.sh prompt G.json T1  # worker prompt with fixed sections
+```
+
+The SKILL.md files run it as a checklist loop: validate -> ready -> dispatch -> diff check -> acceptance -> cross-review -> done, with an attempts-based escalation table and a DO NOT list.
+
 ## Configuring models
 
 Every role's model is configurable globally. Precedence: **env var (same name as role) > config file > built-in default.**
