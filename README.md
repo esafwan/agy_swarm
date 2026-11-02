@@ -27,9 +27,9 @@ cd <worktree> && agy --new-project --model "Gemini 3.8 Flash (Medium)" --dangero
 
 Parallelism is background processes, one per git worktree. Every call is followed by an independent `git diff --stat` (agy can silently edit the wrong directory). `--output-format json` returns `conversation_id`; resume with `agy --conversation <id>`. `agy_swarm/scripts/agy_dispatch.sh` wraps this.
 
-## Model mapping
+## Default model mapping
 
-Run `agy models` first; names drift. Strings below were verified against real output.
+These are defaults; see "Configuring models". Run `agy models` first; names drift. Strings were verified against real output.
 
 | claude_swarm role | agy_swarm | agy_swarm_deep |
 |---|---|---|
@@ -43,6 +43,40 @@ Run `agy models` first; names drift. Strings below were verified against real ou
 | Stuck handoff (opt-in only) | `Claude Sonnet 5.5 (Medium)` then `Claude Opus 5.5 (Low)` | `Claude Opus 5.5 (Low)` |
 
 `agy_swarm` never uses Argon.
+
+## Configuring models
+
+Every role's model is configurable globally. Precedence: **env var (same name as role) > config file > built-in default.**
+
+- `agy_swarm`: `~/.config/agy_swarm/models.env` (template `config/models.env.example`)
+- `agy_swarm_deep`: `~/.config/agy_swarm/models.deep.env` (template `config/models.deep.env.example`)
+
+| Role | Meaning |
+|---|---|
+| MAIN | orchestrator/coordinator |
+| PLANNER | plan + plan vetting / review gate |
+| EXECUTOR / EXECUTOR_LIGHT / EXECUTOR_HARD | default / trivial / hardest worker nodes |
+| STEERING | conflict resolution, redirects |
+| CROSS_REVIEW | peer and per-node review, second escalation |
+| FINAL_REVIEW | one-shot final adversarial review |
+| STUCK_HANDOFF | optional Claude handoff; empty disables |
+
+```bash
+agy_swarm/scripts/agy_models.sh init            # copy example to ~/.config/agy_swarm/
+agy_swarm/scripts/agy_models.sh --deep show     # resolved models
+agy_swarm/scripts/agy_models.sh check           # validate against `agy models`
+EXECUTOR="Gemini 3.8 Flash (High)" agy_swarm/scripts/agy_dispatch.sh --role EXECUTOR <worktree> <prompt-file> <log-dir>
+```
+
+Example file:
+
+```bash
+EXECUTOR="Gemini 3.8 Flash (Medium)"
+CROSS_REVIEW="GPT-OSS 120B (Medium)"
+STUCK_HANDOFF="Claude Opus 5.5 (Low)"
+```
+
+`agy_dispatch.sh` fails loudly if the resolved model is empty or absent from `agy models`. The `agy_swarm` defaults never use Argon.
 
 ## Differences from claude_swarm
 
